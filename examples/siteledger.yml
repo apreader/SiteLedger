@@ -1,0 +1,14 @@
+records:
+  files:
+    - data/index.json
+  collection_path: entries
+  id_field: id
+  page_field: url
+
+pages:
+  include:
+    - pages/*.html
+  exclude: []
+  id:
+    selector: meta[name="entry-id"]
+    attribute: content

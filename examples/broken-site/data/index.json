@@ -1,0 +1,7 @@
+{
+  "entries": [
+    {"id": "alpha", "url": "pages/alpha.html"},
+    {"id": "beta", "url": "pages/missing.html"},
+    {"id": "wrong-record-id", "url": "pages/wrong.html"}
+  ]
+}

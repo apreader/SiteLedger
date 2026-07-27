@@ -1,0 +1,51 @@
+from pathlib import Path
+
+import pytest
+
+from siteledger.config import ConfigError, load_config
+
+
+def test_load_config_parses_minimal_schema(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  collection_path: entries
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: meta[name="entry-id"]
+    attribute: content
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.records.files == ("data/index.json",)
+    assert config.records.collection_path == "entries"
+    assert config.pages.include == ("pages/*.html",)
+    assert config.pages.exclude == ()
+    assert config.pages.identifier.attribute == "content"
+
+
+def test_load_config_rejects_missing_record_files(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="records.files"):
+        load_config(config_path)
