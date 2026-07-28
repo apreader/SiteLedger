@@ -15,9 +15,7 @@ class RuleDefinition:
 MISSING_RECORD_PAGE = RuleDefinition(
     "SL001", "missing-record-page", "JSON record points to a missing page"
 )
-ORPHANED_HTML_PAGE = RuleDefinition(
-    "SL002", "orphaned-html-page", "HTML page has no JSON record"
-)
+ORPHANED_HTML_PAGE = RuleDefinition("SL002", "orphaned-html-page", "HTML page has no JSON record")
 IDENTIFIER_MISMATCH = RuleDefinition(
     "SL003", "identifier-mismatch", "Record and page identifiers disagree"
 )

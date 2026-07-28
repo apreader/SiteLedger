@@ -49,3 +49,26 @@ pages:
 
     with pytest.raises(ConfigError, match="records.files"):
         load_config(config_path)
+
+
+def test_load_config_preserves_cross_platform_patterns(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        r"""
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: ["pages\\**\\*.html"]
+  exclude: ["pages\\admin\\**"]
+  id:
+    selector: h1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.pages.include == (r"pages\**\*.html",)
+    assert config.pages.exclude == (r"pages\admin\**",)

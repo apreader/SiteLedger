@@ -2,21 +2,24 @@
 
 SiteLedger audits static websites whose HTML pages, JSON indexes, and metadata can drift out of agreement. It reports inconsistencies without modifying the source site.
 
-## 
+The project is being built from a real integration need at TempleSophia.org while keeping all auditing behavior reusable and configuration-driven.
 
 ## Current vertical slice
 
 Version `0.1.0` supports:
 
-* Configurable JSON record files and nested collection paths
-* Configurable HTML include and exclude patterns
-* CSS-selector-based page identifiers
-* Missing record-page detection (`SL001`)
-* Orphaned HTML page detection (`SL002`)
-* Record/page identifier mismatch detection (`SL003`)
-* Duplicate record ID, record URL, and page ID detection (`SL006`)
-* Deterministic terminal output
-* CI-friendly exit codes
+- Configurable JSON record files and nested collection paths
+- Configurable HTML include and exclude patterns
+- Recursive `**` glob support across Windows, macOS, and Linux
+- Deterministic POSIX-style relative paths
+- Site-root escape protection and clear scan errors
+- CSS-selector-based page identifiers
+- Missing record-page detection (`SL001`)
+- Orphaned HTML page detection (`SL002`)
+- Record/page identifier mismatch detection (`SL003`)
+- Duplicate record ID, record URL, and page ID detection (`SL006`)
+- Deterministic terminal output
+- CI-friendly exit codes
 
 SiteLedger is read-only. The audit command reports findings and leaves the audited site unchanged.
 
@@ -29,7 +32,7 @@ python -m venv .venv
 Activate the environment, then install SiteLedger and its development tools:
 
 ```bash
-python -m pip install -e ".\[dev]"
+python -m pip install -e ".[dev]"
 ```
 
 ## Quick start
@@ -52,17 +55,17 @@ A clean audit exits with `0`. Audit errors exit with `1`. Configuration, parsing
 records:
   files:
     - data/index.json
-  collection\_path: entries
-  id\_field: id
-  page\_field: url
+  collection_path: entries
+  id_field: id
+  page_field: url
 
 pages:
   include:
-    - Library/PGM/spells/\*.html
+    - Library/PGM/spells/*.html
   exclude:
-    - Library/PGM/admin/\*\*
+    - Library/PGM/admin/**
   id:
-    selector: meta\[name="entry-id"]
+    selector: meta[name="entry-id"]
     attribute: content
 ```
 
@@ -95,5 +98,4 @@ mypy
 
 ## Roadmap
 
-The next milestones add richer file discovery behavior, link and anchor validation, local asset checks, JSON and HTML reports, Temple Sophia integration fixtures, and GitHub Actions.
-
+The next milestones add richer JSON and HTML parsing, link and anchor validation, local asset checks, JSON and HTML reports, and Temple Sophia integration fixtures.

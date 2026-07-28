@@ -13,9 +13,7 @@ def _location(finding: Finding) -> str:
 def render_console(result: AuditResult) -> str:
     """Render deterministic plain-text output suitable for terminals and CI logs."""
 
-    lines = [
-        f"Scanned {result.record_count} record(s) and {result.page_count} HTML page(s)."
-    ]
+    lines = [f"Scanned {result.record_count} record(s) and {result.page_count} HTML page(s)."]
     if not result.findings:
         lines.append("No findings.")
         lines.append("Summary: 0 errors, 0 warnings, 0 informational findings.")
@@ -23,9 +21,7 @@ def render_console(result: AuditResult) -> str:
 
     for finding in result.findings:
         lines.append("")
-        lines.append(
-            f"{finding.severity.value.upper()} {finding.rule_id} {_location(finding)}"
-        )
+        lines.append(f"{finding.severity.value.upper()} {finding.rule_id} {_location(finding)}")
         lines.append(f"  {finding.message}")
         if finding.expected is not None:
             lines.append(f"  Expected: {finding.expected}")

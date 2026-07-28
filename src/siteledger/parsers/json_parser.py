@@ -36,9 +36,7 @@ def _walk_collection(data: Any, collection_path: str | None, source: Path) -> tu
         if not component:
             raise JsonRecordError(f"empty component in collection path for {source}")
         if not isinstance(current, dict) or component not in current:
-            raise JsonRecordError(
-                f"collection path {collection_path!r} was not found in {source}"
-            )
+            raise JsonRecordError(f"collection path {collection_path!r} was not found in {source}")
         current = current[component]
         json_location += f".{component}"
     return current, json_location
@@ -65,9 +63,7 @@ def load_records(root: Path, config: RecordConfig) -> tuple[Record, ...]:
 
         collection, base_location = _walk_collection(data, config.collection_path, source)
         if not isinstance(collection, list):
-            raise JsonRecordError(
-                f"configured collection in {relative_path} must be a JSON array"
-            )
+            raise JsonRecordError(f"configured collection in {relative_path} must be a JSON array")
 
         for index, item in enumerate(collection):
             location = f"{base_location}[{index}]"
