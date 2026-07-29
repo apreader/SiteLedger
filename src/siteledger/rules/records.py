@@ -123,11 +123,12 @@ def reconcile_records_and_pages(
     for record in records:
         page = pages_by_path.get(record.page_path)
         if page is None:
+            message = f"record {record.identifier!r} points to a page that was not discovered"
             findings.append(
                 Finding(
                     severity=Severity.ERROR,
                     rule_id=MISSING_RECORD_PAGE.rule_id,
-                    message=f"record {record.identifier!r} points to a page that was not discovered",
+                    message=message,
                     file=record.source_file,
                     location=record.location,
                     expected=str(record.page_path),
