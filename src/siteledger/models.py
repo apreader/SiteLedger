@@ -13,6 +13,15 @@ class Severity(StrEnum):
     INFO = "info"
 
 
+class AssetKind(StrEnum):
+    """Kind of local asset referenced by an HTML page."""
+
+    IMAGE = "image"
+    STYLESHEET = "stylesheet"
+    SCRIPT = "script"
+    DOWNLOAD = "download"
+
+
 @dataclass(frozen=True, slots=True)
 class Finding:
     """A single actionable inconsistency discovered by SiteLedger."""
@@ -28,6 +37,31 @@ class Finding:
 
 
 @dataclass(frozen=True, slots=True)
+class AnchorReference:
+    """An HTML ``id`` or named anchor preserved for fragment validation."""
+
+    name: str
+    location: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LinkReference:
+    """A site-local hyperlink preserved exactly as written in the page."""
+
+    target: str
+    location: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AssetReference:
+    """A site-local image, stylesheet, script, or download reference."""
+
+    kind: AssetKind
+    target: str
+    location: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class Record:
     """A normalized record loaded from a configured JSON collection."""
 
@@ -35,6 +69,9 @@ class Record:
     page_path: PurePosixPath
     source_file: PurePosixPath
     location: str
+    identifier_location: str
+    page_location: str
+    source_index: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +81,11 @@ class Page:
     path: PurePosixPath
     identifier: str | None
     id_location: str | None = None
+    title: str | None = None
+    title_location: str | None = None
+    anchors: tuple[AnchorReference, ...] = ()
+    links: tuple[LinkReference, ...] = ()
+    assets: tuple[AssetReference, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

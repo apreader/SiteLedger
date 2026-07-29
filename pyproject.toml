@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "siteledger"
-version = "0.1.0"
+version = "0.2.0"
 description = "Audit consistency across static-site HTML pages, JSON indexes, and navigation metadata."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -11,12 +11,17 @@ from siteledger.scanner import discover_pages
 
 
 def audit_site(root: Path, config: SiteLedgerConfig) -> AuditResult:
-    """Run the Milestone 1 record/page vertical slice against a local site."""
+    """Run the configured record/page audit against a local site."""
 
     normalized_root = root.resolve()
     page_paths = discover_pages(normalized_root, config.pages)
     records = load_records(normalized_root, config.records)
-    pages = parse_pages(normalized_root, page_paths, config.pages.identifier)
+    pages = parse_pages(
+        normalized_root,
+        page_paths,
+        config.pages.identifier,
+        config.pages.title,
+    )
     findings = reconcile_records_and_pages(records, pages)
     return AuditResult(
         findings=findings,

@@ -19,6 +19,8 @@ pages:
   id:
     selector: meta[name="entry-id"]
     attribute: content
+  title:
+    selector: h1
 """.strip(),
         encoding="utf-8",
     )
@@ -30,6 +32,9 @@ pages:
     assert config.pages.include == ("pages/*.html",)
     assert config.pages.exclude == ()
     assert config.pages.identifier.attribute == "content"
+    assert config.pages.title is not None
+    assert config.pages.title.selector == "h1"
+    assert config.pages.title.attribute is None
 
 
 def test_load_config_rejects_missing_record_files(tmp_path: Path) -> None:
@@ -72,3 +77,24 @@ pages:
 
     assert config.pages.include == (r"pages\**\*.html",)
     assert config.pages.exclude == (r"pages\admin\**",)
+
+
+def test_load_config_allows_omitted_title_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.pages.title is None

@@ -12,3 +12,6 @@ pages:
   id:
     selector: meta[name="entry-id"]
     attribute: content
+
+  title:
+    selector: h1

@@ -1,0 +1,12 @@
+{
+  "catalog": {
+    "collections": [
+      {
+        "entries": [
+          {"id": "alpha", "url": "pages/alpha.html"},
+          {"id": "beta", "url": "pages/beta.html?view=full#top"}
+        ]
+      }
+    ]
+  }
+}

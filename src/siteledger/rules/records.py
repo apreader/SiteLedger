@@ -25,14 +25,14 @@ def _duplicate_record_findings(records: tuple[Record, ...]) -> list[Finding]:
         if len(matches) < 2:
             continue
         first = matches[0]
-        locations = ", ".join(f"{item.source_file}:{item.location}" for item in matches)
+        locations = ", ".join(f"{item.source_file}:{item.identifier_location}" for item in matches)
         findings.append(
             Finding(
                 severity=Severity.ERROR,
                 rule_id=DUPLICATE_IDENTIFIER.rule_id,
                 message=f"record identifier {identifier!r} appears {len(matches)} times",
                 file=first.source_file,
-                location=first.location,
+                location=first.identifier_location,
                 expected="one record per identifier",
                 actual=locations,
                 suggestion=(
@@ -45,14 +45,14 @@ def _duplicate_record_findings(records: tuple[Record, ...]) -> list[Finding]:
         if len(matches) < 2:
             continue
         first = matches[0]
-        locations = ", ".join(f"{item.source_file}:{item.location}" for item in matches)
+        locations = ", ".join(f"{item.source_file}:{item.page_location}" for item in matches)
         findings.append(
             Finding(
                 severity=Severity.ERROR,
                 rule_id=DUPLICATE_IDENTIFIER.rule_id,
                 message=f"page path {str(page_path)!r} is referenced by {len(matches)} records",
                 file=first.source_file,
-                location=first.location,
+                location=first.page_location,
                 expected="one record per page path",
                 actual=locations,
                 suggestion=(
@@ -130,7 +130,7 @@ def reconcile_records_and_pages(
                     rule_id=MISSING_RECORD_PAGE.rule_id,
                     message=message,
                     file=record.source_file,
-                    location=record.location,
+                    location=record.page_location,
                     expected=str(record.page_path),
                     actual="missing",
                     suggestion="Create the page or correct the record's configured page field.",

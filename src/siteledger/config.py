@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import yaml
 
@@ -20,16 +20,20 @@ class RecordConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class PageIdConfig:
+class PageValueConfig:
     selector: str
     attribute: str | None
+
+
+PageIdConfig: TypeAlias = PageValueConfig
 
 
 @dataclass(frozen=True, slots=True)
 class PageConfig:
     include: tuple[str, ...]
     exclude: tuple[str, ...]
-    identifier: PageIdConfig
+    identifier: PageValueConfig
+    title: PageValueConfig | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +73,17 @@ def _string_list(
     return tuple(item.strip() for item in value)
 
 
+def _page_value_config(value: Any, section: str) -> PageValueConfig:
+    raw = _mapping(value, section)
+    attribute = raw.get("attribute")
+    if attribute is not None and (not isinstance(attribute, str) or not attribute.strip()):
+        raise ConfigError(f"'{section}.attribute' must be a non-empty string or null")
+    return PageValueConfig(
+        selector=_required_string(raw, "selector", section),
+        attribute=attribute.strip() if isinstance(attribute, str) else None,
+    )
+
+
 def load_config(path: Path) -> SiteLedgerConfig:
     """Load and validate the intentionally small SiteLedger schema."""
 
@@ -84,15 +99,13 @@ def load_config(path: Path) -> SiteLedgerConfig:
     root = _mapping(raw, "configuration")
     records_raw = _mapping(root.get("records"), "records")
     pages_raw = _mapping(root.get("pages"), "pages")
-    page_id_raw = _mapping(pages_raw.get("id"), "pages.id")
 
     collection_path = records_raw.get("collection_path")
     if collection_path is not None and not isinstance(collection_path, str):
         raise ConfigError("'records.collection_path' must be a string or null")
 
-    attribute = page_id_raw.get("attribute")
-    if attribute is not None and (not isinstance(attribute, str) or not attribute.strip()):
-        raise ConfigError("'pages.id.attribute' must be a non-empty string or null")
+    title_raw = pages_raw.get("title")
+    title_config = _page_value_config(title_raw, "pages.title") if title_raw is not None else None
 
     return SiteLedgerConfig(
         records=RecordConfig(
@@ -104,9 +117,7 @@ def load_config(path: Path) -> SiteLedgerConfig:
         pages=PageConfig(
             include=_string_list(pages_raw, "include", "pages", required=True),
             exclude=_string_list(pages_raw, "exclude", "pages", required=False),
-            identifier=PageIdConfig(
-                selector=_required_string(page_id_raw, "selector", "pages.id"),
-                attribute=attribute.strip() if isinstance(attribute, str) else None,
-            ),
+            identifier=_page_value_config(pages_raw.get("id"), "pages.id"),
+            title=title_config,
         ),
     )
