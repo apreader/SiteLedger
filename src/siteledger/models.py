@@ -65,13 +65,19 @@ class AssetReference:
 class Record:
     """A normalized record loaded from a configured JSON collection."""
 
-    identifier: str
-    page_path: PurePosixPath
+    identifier: str | None
+    page_path: PurePosixPath | None
     source_file: PurePosixPath
     location: str
     identifier_location: str
     page_location: str
     source_index: int
+    identifier_actual: str
+    page_actual: str
+    page_error: str | None = None
+    title: str | None = None
+    title_location: str | None = None
+    title_actual: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

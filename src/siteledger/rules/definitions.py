@@ -22,6 +22,16 @@ IDENTIFIER_MISMATCH = RuleDefinition(
 DUPLICATE_IDENTIFIER = RuleDefinition(
     "SL006", "duplicate-identifier", "Identifier or URL is duplicated"
 )
+MISSING_RECORD_IDENTIFIER = RuleDefinition(
+    "SL008", "missing-record-identifier", "JSON record has no usable identifier"
+)
+INVALID_RECORD_PAGE = RuleDefinition(
+    "SL009", "invalid-record-page", "JSON record has no usable local page path"
+)
+MISSING_PAGE_IDENTIFIER = RuleDefinition(
+    "SL010", "missing-page-identifier", "HTML page has no configured identifier"
+)
+TITLE_MISMATCH = RuleDefinition("SL011", "title-mismatch", "Record and page titles disagree")
 
 RULES: dict[str, RuleDefinition] = {
     rule.rule_id: rule
@@ -30,5 +40,9 @@ RULES: dict[str, RuleDefinition] = {
         ORPHANED_HTML_PAGE,
         IDENTIFIER_MISMATCH,
         DUPLICATE_IDENTIFIER,
+        MISSING_RECORD_IDENTIFIER,
+        INVALID_RECORD_PAGE,
+        MISSING_PAGE_IDENTIFIER,
+        TITLE_MISMATCH,
     )
 }

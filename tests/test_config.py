@@ -98,3 +98,97 @@ pages:
     config = load_config(config_path)
 
     assert config.pages.title is None
+
+
+def test_load_config_parses_title_field_and_rule_switches(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+  title_field: title
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+rules:
+  SL002: false
+  SL011: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.records.title_field == "title"
+    assert config.rules.is_enabled("SL001") is True
+    assert config.rules.is_enabled("SL002") is False
+    assert config.rules.is_enabled("SL011") is True
+
+
+def test_load_config_rejects_unknown_rule_id(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+rules:
+  SL999: false
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="SL999"):
+        load_config(config_path)
+
+
+def test_load_config_rejects_non_boolean_rule_switch(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+rules:
+  SL001: disabled
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="rules.SL001"):
+        load_config(config_path)
+
+
+def test_load_config_rejects_non_string_rule_id(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+rules:
+  1: false
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="keys must be string"):
+        load_config(config_path)

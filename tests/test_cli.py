@@ -77,3 +77,17 @@ def test_cli_returns_two_for_malformed_json(tmp_path: Path) -> None:
     assert result.exit_code == 2
     assert "invalid JSON" in result.stderr
     assert "line 1" in result.stderr
+
+
+def test_cli_reports_invalid_record_fields_without_aborting_audit(tmp_path: Path) -> None:
+    config_path = _write_project(tmp_path)
+    (tmp_path / "data/index.json").write_text(
+        json.dumps({"entries": [{"id": "alpha", "url": 42}]}),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["audit", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "ERROR SL009" in result.stdout
+    assert "$.entries[0].url" in result.stdout

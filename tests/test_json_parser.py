@@ -75,17 +75,20 @@ def test_load_records_reports_malformed_json_location() -> None:
         )
 
 
-def test_load_records_reports_exact_invalid_record_field(tmp_path: Path) -> None:
+def test_load_records_preserves_invalid_record_field_for_reconciliation(tmp_path: Path) -> None:
     (tmp_path / "records.json").write_text(
         '{"entries": [{"id": "alpha", "url": 42}]}',
         encoding="utf-8",
     )
 
-    with pytest.raises(JsonRecordError, match=r"\$\.entries\[0\]\.url"):
-        load_records(
-            tmp_path,
-            _config(files=("records.json",), collection_path="entries"),
-        )
+    records = load_records(
+        tmp_path,
+        _config(files=("records.json",), collection_path="entries"),
+    )
+
+    assert records[0].page_path is None
+    assert records[0].page_location == "$.entries[0].url"
+    assert records[0].page_actual == "int: 42"
 
 
 def test_load_records_reports_non_object_record_type(tmp_path: Path) -> None:
@@ -111,3 +114,39 @@ def test_normalize_site_path_rejects_external_and_parent_paths() -> None:
         normalize_site_path("https://example.com/page.html")
     with pytest.raises(JsonRecordError, match="invalid"):
         normalize_site_path("../outside.html")
+
+
+def test_load_records_preserves_optional_title_field(tmp_path: Path) -> None:
+    (tmp_path / "records.json").write_text(
+        '[{"id": "alpha", "url": "pages/alpha.html", "title": "Alpha Title"}]',
+        encoding="utf-8",
+    )
+    config = RecordConfig(
+        files=("records.json",),
+        collection_path=None,
+        id_field="id",
+        page_field="url",
+        title_field="title",
+    )
+
+    records = load_records(tmp_path, config)
+
+    assert records[0].title == "Alpha Title"
+    assert records[0].title_location == "$[0].title"
+    assert records[0].title_actual == "'Alpha Title'"
+
+
+def test_load_records_preserves_missing_identifier_for_reconciliation(tmp_path: Path) -> None:
+    (tmp_path / "records.json").write_text(
+        '[{"url": "pages/alpha.html"}]',
+        encoding="utf-8",
+    )
+
+    records = load_records(
+        tmp_path,
+        _config(files=("records.json",), collection_path=None),
+    )
+
+    assert records[0].identifier is None
+    assert records[0].identifier_actual == "missing"
+    assert records[0].identifier_location == "$[0].id"

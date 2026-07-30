@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {"id": "missing-page", "url": "pages/missing.html", "title": "Missing"},
+    {"url": "pages/no-record-id.html", "title": "No Record ID"},
+    {"id": "bad-path", "url": "https://example.com/remote.html", "title": "Remote"},
+    {"id": "expected-id", "url": "pages/mismatch.html", "title": "Expected Title"},
+    {"id": "no-page-id", "url": "pages/no-page-id.html", "title": "No Page ID"},
+    {"id": "same", "url": "pages/duplicate-a.html", "title": "Duplicate A"},
+    {"id": "same", "url": "pages/duplicate-b.html", "title": "Duplicate B"}
+  ]
+}

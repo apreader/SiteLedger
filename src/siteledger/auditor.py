@@ -22,7 +22,7 @@ def audit_site(root: Path, config: SiteLedgerConfig) -> AuditResult:
         config.pages.identifier,
         config.pages.title,
     )
-    findings = reconcile_records_and_pages(records, pages)
+    findings = reconcile_records_and_pages(records, pages, config.rules)
     return AuditResult(
         findings=findings,
         record_count=len(records),

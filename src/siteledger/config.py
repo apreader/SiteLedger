@@ -6,6 +6,8 @@ from typing import Any, TypeAlias
 
 import yaml
 
+from siteledger.rules.definitions import RULES
+
 
 class ConfigError(ValueError):
     """Raised when a SiteLedger configuration file is missing or invalid."""
@@ -17,6 +19,7 @@ class RecordConfig:
     collection_path: str | None
     id_field: str
     page_field: str
+    title_field: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,9 +40,20 @@ class PageConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class RuleConfig:
+    """Configured enablement state for stable SiteLedger rule IDs."""
+
+    enabled: frozenset[str]
+
+    def is_enabled(self, rule_id: str) -> bool:
+        return rule_id in self.enabled
+
+
+@dataclass(frozen=True, slots=True)
 class SiteLedgerConfig:
     records: RecordConfig
     pages: PageConfig
+    rules: RuleConfig
 
 
 def _mapping(value: Any, key: str) -> dict[str, Any]:
@@ -52,6 +66,15 @@ def _required_string(mapping: dict[str, Any], key: str, section: str) -> str:
     value = mapping.get(key)
     if not isinstance(value, str) or not value.strip():
         raise ConfigError(f"'{section}.{key}' must be a non-empty string")
+    return value.strip()
+
+
+def _optional_string(mapping: dict[str, Any], key: str, section: str) -> str | None:
+    value = mapping.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ConfigError(f"'{section}.{key}' must be a non-empty string or null")
     return value.strip()
 
 
@@ -84,6 +107,21 @@ def _page_value_config(value: Any, section: str) -> PageValueConfig:
     )
 
 
+def _rule_config(value: Any) -> RuleConfig:
+    if value is None:
+        return RuleConfig(enabled=frozenset(RULES))
+    raw = _mapping(value, "rules")
+    if not all(isinstance(rule_id, str) for rule_id in raw):
+        raise ConfigError("'rules' keys must be string rule IDs")
+    unknown = sorted(set(raw) - set(RULES))
+    if unknown:
+        raise ConfigError(f"unknown rule ID(s) in 'rules': {', '.join(unknown)}")
+    for rule_id, enabled in raw.items():
+        if not isinstance(enabled, bool):
+            raise ConfigError(f"'rules.{rule_id}' must be true or false")
+    return RuleConfig(enabled=frozenset(rule_id for rule_id in RULES if raw.get(rule_id, True)))
+
+
 def load_config(path: Path) -> SiteLedgerConfig:
     """Load and validate the intentionally small SiteLedger schema."""
 
@@ -113,6 +151,7 @@ def load_config(path: Path) -> SiteLedgerConfig:
             collection_path=collection_path.strip() if isinstance(collection_path, str) else None,
             id_field=_required_string(records_raw, "id_field", "records"),
             page_field=_required_string(records_raw, "page_field", "records"),
+            title_field=_optional_string(records_raw, "title_field", "records"),
         ),
         pages=PageConfig(
             include=_string_list(pages_raw, "include", "pages", required=True),
@@ -120,4 +159,5 @@ def load_config(path: Path) -> SiteLedgerConfig:
             identifier=_page_value_config(pages_raw.get("id"), "pages.id"),
             title=title_config,
         ),
+        rules=_rule_config(root.get("rules")),
     )

@@ -15,6 +15,7 @@ class JsonRecordError(RuntimeError):
 
 
 CollectionToken = str | int
+_MISSING = object()
 
 
 def normalize_site_path(value: str) -> PurePosixPath:
@@ -122,6 +123,23 @@ def _read_json(source: Path, relative_path: PurePosixPath) -> Any:
         ) from exc
 
 
+def _describe_value(value: Any) -> str:
+    if value is _MISSING:
+        return "missing"
+    if isinstance(value, str):
+        return repr(value) if value else "empty string"
+    rendered = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return f"{type(value).__name__}: {rendered}"
+
+
+def _optional_text(item: dict[str, Any], field: str | None) -> tuple[str | None, str | None]:
+    if field is None:
+        return None, None
+    raw = item.get(field, _MISSING)
+    value = raw.strip() if isinstance(raw, str) and raw.strip() else None
+    return value, _describe_value(raw)
+
+
 def load_records(root: Path, config: RecordConfig) -> tuple[Record, ...]:
     """Load configured JSON records with stable source and field locations."""
 
@@ -144,31 +162,43 @@ def load_records(root: Path, config: RecordConfig) -> tuple[Record, ...]:
 
             identifier_location = f"{location}.{config.id_field}"
             page_location = f"{location}.{config.page_field}"
-            identifier = item.get(config.id_field)
-            page_value = item.get(config.page_field)
-            if not isinstance(identifier, str) or not identifier.strip():
-                raise JsonRecordError(
-                    f"field {relative_path}:{identifier_location} must be a non-empty string"
-                )
-            if not isinstance(page_value, str) or not page_value.strip():
-                raise JsonRecordError(
-                    f"field {relative_path}:{page_location} must be a non-empty string"
-                )
+            raw_identifier = item.get(config.id_field, _MISSING)
+            raw_page = item.get(config.page_field, _MISSING)
+            identifier = (
+                raw_identifier.strip()
+                if isinstance(raw_identifier, str) and raw_identifier.strip()
+                else None
+            )
+            page_value = (
+                raw_page.strip() if isinstance(raw_page, str) and raw_page.strip() else None
+            )
+            page_path: PurePosixPath | None = None
+            page_error: str | None = None
+            if page_value is not None:
+                try:
+                    page_path = normalize_site_path(page_value)
+                except JsonRecordError as exc:
+                    page_error = str(exc)
 
-            try:
-                page_path = normalize_site_path(page_value)
-            except JsonRecordError as exc:
-                raise JsonRecordError(f"{relative_path}:{page_location}: {exc}") from exc
-
+            title, title_actual = _optional_text(item, config.title_field)
+            title_location = (
+                f"{location}.{config.title_field}" if config.title_field is not None else None
+            )
             records.append(
                 Record(
-                    identifier=identifier.strip(),
+                    identifier=identifier,
                     page_path=page_path,
                     source_file=relative_path,
                     location=location,
                     identifier_location=identifier_location,
                     page_location=page_location,
                     source_index=index,
+                    identifier_actual=_describe_value(raw_identifier),
+                    page_actual=_describe_value(raw_page),
+                    page_error=page_error,
+                    title=title,
+                    title_location=title_location,
+                    title_actual=title_actual,
                 )
             )
 
