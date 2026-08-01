@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
 from pathlib import PurePosixPath
 
 from siteledger.config import RuleConfig
 from siteledger.models import Finding, Page, Record, Severity
+from siteledger.rules.common import sort_findings
 from siteledger.rules.definitions import (
     DUPLICATE_IDENTIFIER,
     IDENTIFIER_MISMATCH,
@@ -184,22 +184,6 @@ def _title_finding(record: Record, page: Page) -> Finding | None:
     )
 
 
-def _sort_findings(findings: Iterable[Finding]) -> tuple[Finding, ...]:
-    severity_order = {Severity.ERROR: 0, Severity.WARNING: 1, Severity.INFO: 2}
-    return tuple(
-        sorted(
-            findings,
-            key=lambda finding: (
-                severity_order[finding.severity],
-                finding.rule_id,
-                str(finding.file),
-                finding.location or "",
-                finding.message,
-            ),
-        )
-    )
-
-
 def reconcile_records_and_pages(
     records: tuple[Record, ...],
     pages: tuple[Page, ...],
@@ -287,4 +271,4 @@ def reconcile_records_and_pages(
                     )
                 )
 
-    return _sort_findings(findings)
+    return sort_findings(findings)

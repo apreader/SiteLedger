@@ -19,6 +19,12 @@ ORPHANED_HTML_PAGE = RuleDefinition("SL002", "orphaned-html-page", "HTML page ha
 IDENTIFIER_MISMATCH = RuleDefinition(
     "SL003", "identifier-mismatch", "Record and page identifiers disagree"
 )
+BROKEN_INTERNAL_LINK = RuleDefinition(
+    "SL004", "broken-internal-link", "Internal link target or fragment is missing"
+)
+MISSING_LOCAL_ASSET = RuleDefinition(
+    "SL005", "missing-local-asset", "Referenced local asset file is missing"
+)
 DUPLICATE_IDENTIFIER = RuleDefinition(
     "SL006", "duplicate-identifier", "Identifier or URL is duplicated"
 )
@@ -39,6 +45,8 @@ RULES: dict[str, RuleDefinition] = {
         MISSING_RECORD_PAGE,
         ORPHANED_HTML_PAGE,
         IDENTIFIER_MISMATCH,
+        BROKEN_INTERNAL_LINK,
+        MISSING_LOCAL_ASSET,
         DUPLICATE_IDENTIFIER,
         MISSING_RECORD_IDENTIFIER,
         INVALID_RECORD_PAGE,

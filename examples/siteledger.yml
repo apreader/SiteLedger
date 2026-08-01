@@ -12,10 +12,18 @@ pages:
   id:
     selector: meta[name="entry-id"]
     attribute: content
-
   title:
     selector: h1
+
+# Every asset category is checked by default. Override categories as needed:
+# assets:
+#   check_images: true
+#   check_stylesheets: true
+#   check_scripts: true
+#   check_downloads: true
 
 # All known rules are enabled by default. Override individual rules by ID:
 # rules:
 #   SL002: false
+#   SL004: false
+#   SL005: false

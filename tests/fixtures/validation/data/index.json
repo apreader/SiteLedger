@@ -1,0 +1,6 @@
+{
+  "entries": [
+    {"id": "home", "url": "pages/index.html"},
+    {"id": "guide", "url": "pages/guide/index.html"}
+  ]
+}

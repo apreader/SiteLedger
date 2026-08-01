@@ -50,9 +50,20 @@ class RuleConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class AssetConfig:
+    """Enabled local asset categories for SL005 validation."""
+
+    check_images: bool = True
+    check_stylesheets: bool = True
+    check_scripts: bool = True
+    check_downloads: bool = True
+
+
+@dataclass(frozen=True, slots=True)
 class SiteLedgerConfig:
     records: RecordConfig
     pages: PageConfig
+    assets: AssetConfig
     rules: RuleConfig
 
 
@@ -122,6 +133,30 @@ def _rule_config(value: Any) -> RuleConfig:
     return RuleConfig(enabled=frozenset(rule_id for rule_id in RULES if raw.get(rule_id, True)))
 
 
+def _asset_config(value: Any) -> AssetConfig:
+    if value is None:
+        return AssetConfig()
+    raw = _mapping(value, "assets")
+    known = {
+        "check_images",
+        "check_stylesheets",
+        "check_scripts",
+        "check_downloads",
+    }
+    unknown = sorted(set(raw) - known)
+    if unknown:
+        raise ConfigError(f"unknown key(s) in 'assets': {', '.join(unknown)}")
+    for key, enabled in raw.items():
+        if not isinstance(enabled, bool):
+            raise ConfigError(f"'assets.{key}' must be true or false")
+    return AssetConfig(
+        check_images=raw.get("check_images", True),
+        check_stylesheets=raw.get("check_stylesheets", True),
+        check_scripts=raw.get("check_scripts", True),
+        check_downloads=raw.get("check_downloads", True),
+    )
+
+
 def load_config(path: Path) -> SiteLedgerConfig:
     """Load and validate the intentionally small SiteLedger schema."""
 
@@ -159,5 +194,6 @@ def load_config(path: Path) -> SiteLedgerConfig:
             identifier=_page_value_config(pages_raw.get("id"), "pages.id"),
             title=title_config,
         ),
+        assets=_asset_config(root.get("assets")),
         rules=_rule_config(root.get("rules")),
     )

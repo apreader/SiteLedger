@@ -192,3 +192,100 @@ rules:
 
     with pytest.raises(ConfigError, match="keys must be string"):
         load_config(config_path)
+
+
+def test_load_config_defaults_all_asset_categories_to_enabled(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.assets.check_images is True
+    assert config.assets.check_stylesheets is True
+    assert config.assets.check_scripts is True
+    assert config.assets.check_downloads is True
+
+
+def test_load_config_parses_asset_category_switches(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+assets:
+  check_images: false
+  check_stylesheets: true
+  check_scripts: false
+  check_downloads: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.assets.check_images is False
+    assert config.assets.check_stylesheets is True
+    assert config.assets.check_scripts is False
+    assert config.assets.check_downloads is True
+
+
+def test_load_config_rejects_unknown_asset_key(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+assets:
+  check_fonts: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="check_fonts"):
+        load_config(config_path)
+
+
+def test_load_config_rejects_non_boolean_asset_switch(tmp_path: Path) -> None:
+    config_path = tmp_path / "siteledger.yml"
+    config_path.write_text(
+        """
+records:
+  files: [data/index.json]
+  id_field: id
+  page_field: url
+pages:
+  include: [pages/*.html]
+  id:
+    selector: h1
+assets:
+  check_images: yes please
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="assets.check_images"):
+        load_config(config_path)

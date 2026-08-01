@@ -1,0 +1,19 @@
+records:
+  files:
+    - data/index.json
+  collection_path: entries
+  id_field: id
+  page_field: url
+
+pages:
+  include:
+    - pages/**/*.html
+  id:
+    selector: meta[name="entry-id"]
+    attribute: content
+
+assets:
+  check_images: true
+  check_stylesheets: true
+  check_scripts: true
+  check_downloads: true

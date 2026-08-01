@@ -113,6 +113,44 @@ def _append_asset(
         assets.append(AssetReference(kind=kind, target=target, location=_location(node)))
 
 
+def _srcset_targets(value: str | None) -> tuple[str, ...]:
+    if value is None:
+        return ()
+
+    targets: list[str] = []
+    position = 0
+    length = len(value)
+    while position < length:
+        while position < length and (value[position].isspace() or value[position] == ","):
+            position += 1
+        if position >= length:
+            break
+
+        start = position
+        is_data_url = value[start : start + 5].lower() == "data:"
+        while position < length and not value[position].isspace():
+            if value[position] == "," and not is_data_url:
+                break
+            position += 1
+        raw_target = value[start:position].rstrip(",")
+
+        while position < length and value[position] != ",":
+            position += 1
+        if position < length and value[position] == ",":
+            position += 1
+
+        target = _local_target(raw_target)
+        if target is not None:
+            targets.append(target)
+
+    return tuple(targets)
+
+
+def _append_srcset_assets(assets: list[AssetReference], node: Tag) -> None:
+    for target in _srcset_targets(_string_attribute(node, "srcset")):
+        assets.append(AssetReference(kind=AssetKind.IMAGE, target=target, location=_location(node)))
+
+
 def _parse_assets(soup: BeautifulSoup) -> tuple[AssetReference, ...]:
     assets: list[AssetReference] = []
     for node in soup.find_all(True):
@@ -120,6 +158,9 @@ def _parse_assets(soup: BeautifulSoup) -> tuple[AssetReference, ...]:
             continue
         if node.name == "img":
             _append_asset(assets, node, AssetKind.IMAGE, "src")
+            _append_srcset_assets(assets, node)
+        elif node.name == "source":
+            _append_srcset_assets(assets, node)
         elif node.name == "script":
             _append_asset(assets, node, AssetKind.SCRIPT, "src")
         elif node.name == "link":

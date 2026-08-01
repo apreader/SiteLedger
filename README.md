@@ -6,9 +6,9 @@ The project is being built from a real integration need at TempleSophia.org whil
 
 ## Current release
 
-Version `0.3.0` provides complete record/page reconciliation with configurable rule switches and field-level source locations.
+Version `0.4.0` adds internal-link, fragment-anchor, and local-asset validation to the record/page reconciliation introduced in `0.3.0`.
 
-### Reconciliation behavior
+### Audit behavior
 
 - Configurable JSON record files and nested collection paths
 - Configurable HTML include and exclude patterns
@@ -19,10 +19,17 @@ Version `0.3.0` provides complete record/page reconciliation with configurable r
 - Missing, duplicate, and mismatched identifiers
 - Missing or malformed record page paths
 - Optional record/page title comparison
-- Per-rule enable and disable switches
+- Relative, root-relative, query-string, and directory-index link resolution
+- Same-page and cross-page fragment-anchor validation
+- URL-decoded local paths and fragment names
+- Local image, stylesheet, script, and explicit-download validation
+- Responsive-image checks for `img[srcset]` and `source[srcset]`
+- Per-rule and per-asset-category switches
 - Deterministic terminal output and CI-friendly exit codes
 
 Structurally invalid JSON, unreadable files, and invalid configuration remain execution errors with exit code `2`. Invalid fields inside otherwise valid record objects become actionable audit findings, allowing the rest of the collection to be checked in the same run.
+
+External URLs and non-file schemes such as `mailto:`, `tel:`, `data:`, and `javascript:` are outside local validation. SiteLedger does not make network requests during an audit.
 
 ### Rule reference
 
@@ -31,6 +38,8 @@ Structurally invalid JSON, unreadable files, and invalid configuration remain ex
 | `SL001` | `missing-record-page` | A valid record page path was not discovered. |
 | `SL002` | `orphaned-html-page` | A discovered HTML page has no record pointing to it. |
 | `SL003` | `identifier-mismatch` | A record ID and its HTML page ID disagree. |
+| `SL004` | `broken-internal-link` | A local link target, directory index, or fragment anchor is missing or invalid. |
+| `SL005` | `missing-local-asset` | A referenced local image, stylesheet, script, or download is missing or invalid. |
 | `SL006` | `duplicate-identifier` | A record ID, page path, or HTML page ID is duplicated. |
 | `SL008` | `missing-record-identifier` | A record ID field is missing, empty, or not a string. |
 | `SL009` | `invalid-record-page` | A record page field is missing, empty, external, or otherwise invalid. |
@@ -39,17 +48,37 @@ Structurally invalid JSON, unreadable files, and invalid configuration remain ex
 
 Every finding includes severity, rule ID, source file, source location when available, expected value, actual value, and a suggested corrective action.
 
-### Parsed HTML data
+### Link validation
 
-Each discovered page preserves:
+SiteLedger validates local links collected from `a[href]` and `area[href]`.
 
-- Configured page identifier and source line
-- Configured title, with `<title>` as the default
-- Element IDs and legacy named anchors
-- Site-local hyperlinks, including fragment-only links
-- Local images, stylesheets, scripts, and explicit downloads
+Supported forms include:
 
-External URLs, `mailto:` links, and data URIs are excluded from local-reference collections. Link and asset references are collected now for Milestone 5 validation.
+```text
+chapter.html
+chapter.html?view=print
+chapter.html#section
+#section
+../chapter/
+/Library/PGM/index.html
+```
+
+An existing directory target resolves to its `index.html`. Fragment-only links resolve against the source page. Fragments on HTML files outside the configured page include patterns are parsed on demand so their anchors can still be validated.
+
+Explicit download links are handled by `SL005` rather than being reported a second time as `SL004`.
+
+### Asset validation
+
+SiteLedger validates local references collected from:
+
+- `img[src]`
+- `img[srcset]`
+- `source[srcset]`
+- `link[rel~="stylesheet"][href]`
+- `script[src]`
+- `a[download][href]`
+
+Query strings and fragments do not change which local file is checked. References that escape the audited site root are findings and are never followed outside that root.
 
 ### Parsed JSON data
 
@@ -121,12 +150,18 @@ pages:
   title:
     selector: h1
 
+assets:
+  check_images: true
+  check_stylesheets: true
+  check_scripts: true
+  check_downloads: true
+
 rules:
   SL002: false
   SL011: true
 ```
 
-The `records.title_field`, `pages.title`, and `rules` sections are optional. Every known rule is enabled by default. A rule switch must use its stable rule ID and a Boolean value; unknown rule IDs are rejected as configuration errors.
+The `records.title_field`, `pages.title`, `assets`, and `rules` sections are optional. Every known rule and asset category is enabled by default. Switches require Boolean values, and unknown keys or rule IDs are rejected as configuration errors.
 
 All configured file paths and glob patterns are relative to the site directory passed to `siteledger audit`.
 
@@ -135,12 +170,17 @@ All configured file paths and glob patterns are relative to the site directory p
 ```text
 src/siteledger/
     cli.py              command-line interface and exit codes
-    config.py           YAML schema and rule-switch validation
+    config.py           YAML schema and validation switches
     models.py           immutable records, pages, links, assets, and findings
     scanner.py          configured cross-platform page discovery
     auditor.py          audit orchestration
     parsers/            JSON and HTML parsing
-    rules/              stable definitions and reconciliation checks
+    rules/
+        records.py      record/page reconciliation
+        links.py        local target and fragment validation
+        assets.py       local asset validation
+        references.py   safe local URL resolution
+        common.py       deterministic finding ordering
     reporters/          deterministic terminal reporting
 ```
 
@@ -159,4 +199,4 @@ GitHub Actions runs linting, formatting, and type checking on Ubuntu and runs th
 
 ## Roadmap
 
-Milestone 5 uses the parsed reference data to validate internal links, fragment anchors, images, stylesheets, scripts, and downloads. Later milestones add navigation sequence validation, JSON reports, and a browsable HTML report.
+Milestone 6 adds structured JSON output, a browsable HTML report, severity filtering, and richer terminal summaries. Navigation-sequence validation follows using the same read-only, configuration-driven rule architecture.

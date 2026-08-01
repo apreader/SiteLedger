@@ -35,7 +35,7 @@ def audit(
         typer.Option("--config", "-c", help="Path to the SiteLedger YAML configuration."),
     ],
 ) -> None:
-    """Audit configured JSON records against configured HTML pages."""
+    """Audit configured records, pages, links, anchors, and local assets."""
 
     try:
         loaded_config = load_config(config)

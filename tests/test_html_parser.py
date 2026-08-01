@@ -74,3 +74,30 @@ def test_parse_page_reports_invalid_selector(tmp_path: Path) -> None:
 
     with pytest.raises(HtmlPageError, match="invalid CSS selector"):
         parse_pages(tmp_path, (PurePosixPath("page.html"),), invalid_config)
+
+
+def test_parse_page_collects_img_and_source_srcset_candidates(tmp_path: Path) -> None:
+    (tmp_path / "responsive.html").write_text(
+        """
+<meta name="entry-id" content="responsive">
+<img srcset="small.png 1x, large.png 2x" src="fallback.png">
+<picture><source srcset="wide.png 1200w"></picture>
+<img srcset="https://cdn.example.com/remote.png 1x" alt="">
+<img srcset="data:image/png;base64,AAAA 1x, local.png 2x" alt="">
+""".strip(),
+        encoding="utf-8",
+    )
+
+    page = parse_pages(
+        tmp_path,
+        (PurePosixPath("responsive.html"),),
+        ID_CONFIG,
+    )[0]
+
+    assert [(asset.kind, asset.target) for asset in page.assets] == [
+        (AssetKind.IMAGE, "fallback.png"),
+        (AssetKind.IMAGE, "small.png"),
+        (AssetKind.IMAGE, "large.png"),
+        (AssetKind.IMAGE, "wide.png"),
+        (AssetKind.IMAGE, "local.png"),
+    ]

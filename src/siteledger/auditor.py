@@ -6,12 +6,16 @@ from siteledger.config import SiteLedgerConfig
 from siteledger.models import AuditResult
 from siteledger.parsers.html_parser import parse_pages
 from siteledger.parsers.json_parser import load_records
+from siteledger.rules.assets import validate_local_assets
+from siteledger.rules.common import sort_findings
+from siteledger.rules.definitions import BROKEN_INTERNAL_LINK, MISSING_LOCAL_ASSET
+from siteledger.rules.links import validate_internal_links
 from siteledger.rules.records import reconcile_records_and_pages
 from siteledger.scanner import discover_pages
 
 
 def audit_site(root: Path, config: SiteLedgerConfig) -> AuditResult:
-    """Run the configured record/page audit against a local site."""
+    """Run the configured static-site integrity audit against a local site."""
 
     normalized_root = root.resolve()
     page_paths = discover_pages(normalized_root, config.pages)
@@ -22,9 +26,15 @@ def audit_site(root: Path, config: SiteLedgerConfig) -> AuditResult:
         config.pages.identifier,
         config.pages.title,
     )
-    findings = reconcile_records_and_pages(records, pages, config.rules)
+
+    findings = list(reconcile_records_and_pages(records, pages, config.rules))
+    if config.rules.is_enabled(BROKEN_INTERNAL_LINK.rule_id):
+        findings.extend(validate_internal_links(normalized_root, pages))
+    if config.rules.is_enabled(MISSING_LOCAL_ASSET.rule_id):
+        findings.extend(validate_local_assets(normalized_root, pages, config.assets))
+
     return AuditResult(
-        findings=findings,
+        findings=sort_findings(findings),
         record_count=len(records),
         page_count=len(pages),
     )
